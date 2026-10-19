@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes.js'
+import courseRoutes from './routes/courseRoutes.js'
 import cors from 'cors';
 
 dotenv.config();
@@ -17,6 +18,9 @@ app.get('/health', (req, res) => {
 
 // auth routes
 app.use('/api/auth', authRoutes);
+
+// course routes
+app.use('/api/courses', courseRoutes);
 
 app.listen(process.env.PORT, () => {
     console.log('Server is running on port', `${process.env.PORT}`);
