@@ -4,6 +4,7 @@ import authRoutes from './routes/authRoutes.js'
 import courseRoutes from './routes/courseRoutes.js'
 import taskRoutes from './routes/taskRoutes.js'
 import assignmentRoutes from'./routes/assignmentRoutes.js';
+import examRoutes from './routes/examRoutes.js'
 import cors from 'cors';
 
 dotenv.config();
@@ -29,6 +30,9 @@ app.use('/api/tasks', taskRoutes);
 
 // assignment routes
 app.use('/api/assignments', assignmentRoutes);
+
+// exam routes
+app.use('/api/exams', examRoutes);
 
 // Catch-all: runs only if no route above matched the request
 app.use((req, res) => {

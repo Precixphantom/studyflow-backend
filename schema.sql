@@ -1,9 +1,19 @@
-CREATE TABLE IF NOT EXISTS users(
- id SERIAL PRIMARY KEY,
- name varchar(255) NOT NULL,
- email varchar(255) UNIQUE NOT NULL,
- password TEXT
-);
+-- Change the existing users table
+ALTER TABLE users
+    -- Each ADD COLUMN IF NOT EXISTS is skipped if the column is already there, so re-running is safe
+    ADD COLUMN IF NOT EXISTS major TEXT,
+    -- University name, optional
+    ADD COLUMN IF NOT EXISTS university TEXT,
+    -- Semester label like "Fall 2026", optional
+    ADD COLUMN IF NOT EXISTS semester TEXT,
+    -- Link to a profile picture, optional
+    ADD COLUMN IF NOT EXISTS avatar TEXT,
+    -- Target GPA with decimals, must be between 0 and 5
+    ADD COLUMN IF NOT EXISTS target_gpa NUMERIC CHECK (target_gpa >= 0 AND target_gpa <= 5),
+    -- Current GPA with decimals, must be between 0 and 5
+    ADD COLUMN IF NOT EXISTS current_gpa NUMERIC CHECK (current_gpa >= 0 AND current_gpa <= 5),
+    -- Whole number of streak days; every existing user gets 0; never negative
+    ADD COLUMN IF NOT EXISTS streak_days INTEGER NOT NULL DEFAULT 0 CHECK (streak_days >= 0);
 
 CREATE TABLE IF NOT EXISTS courses(
     id SERIAL PRIMARY KEY,
@@ -65,4 +75,36 @@ CREATE TABLE IF NOT EXISTS assignments(
     weight NUMERIC CHECK (weight >= 0 AND weight <= 100),
     -- Optional longer text
     description TEXT
+);
+
+-- Create the exams table only if it is not already there
+CREATE TABLE IF NOT EXISTS exams(
+    -- Auto-counting primary key
+    id SERIAL PRIMARY KEY,
+    -- Owner; deleting the user deletes their exams
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    -- The course it belongs to; required; deleting the course deletes its exams
+    course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    -- Every exam needs a title
+    title TEXT NOT NULL,
+    -- Date and time exactly as typed, with no timezone conversion
+    exam_date TIMESTAMP,
+    -- Optional room or place
+    location TEXT,
+    -- Optional percentage between 0 and 100
+    weight NUMERIC CHECK (weight >= 0 AND weight <= 100),
+    -- Optional goal like "A"
+    target_grade TEXT
+);
+
+-- Create the checklist table: one row per topic
+CREATE TABLE IF NOT EXISTS exam_topics(
+    -- Auto-counting primary key
+    id SERIAL PRIMARY KEY,
+    -- Which exam this topic belongs to; deleting the exam deletes its topics
+    exam_id INTEGER NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
+    -- The topic text; required
+    topic TEXT NOT NULL,
+    -- Ticked or not; starts unticked
+    completed BOOLEAN NOT NULL DEFAULT FALSE
 );
