@@ -56,7 +56,7 @@ export const signup = async (req, res) => {
         const result = await pool.query(
             `INSERT INTO users (name, email, password)
             VALUES ($1, $2, $3)
-            RETURNING id, name, email`,
+            RETURNING ${USER_COLUMNS}`,
             [name, corrected_email, password_hash]
         );
 
@@ -71,7 +71,7 @@ export const signup = async (req, res) => {
         res.status(201).json({
             message: 'Account created',
             token,
-            user
+            user: formatUser(user)
         });
     } catch (error) {
         if (error.code === '23505') {
@@ -93,7 +93,7 @@ export const login = async (req, res) => {
         const corrected_email = email.trim().toLowerCase();
 
         const result = await pool.query(
-            'SELECT id, name, email, password FROM users WHERE email = $1',
+            `SELECT ${USER_COLUMNS}, password FROM users WHERE email = $1`,
             [corrected_email]
         );
 
@@ -123,11 +123,7 @@ export const login = async (req, res) => {
         res.status(200).json({
             message: 'Login Successful',
             token,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email
-            }
+            user: formatUser(user)
         });
     } catch (error) {
         console.error('login error:', error.message);

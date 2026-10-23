@@ -1,10 +1,13 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import passport from './config/passport.js';
 import authRoutes from './routes/authRoutes.js'
 import courseRoutes from './routes/courseRoutes.js'
 import taskRoutes from './routes/taskRoutes.js'
 import assignmentRoutes from'./routes/assignmentRoutes.js';
-import examRoutes from './routes/examRoutes.js'
+import examRoutes from './routes/examRoutes.js';
+import noteRoutes from './routes/noteRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import cors from 'cors';
 
 dotenv.config();
@@ -14,6 +17,8 @@ const app = express()
 app.use(express.json());
 
 app.use(cors());
+
+app.use(passport.initialize());
 
 app.get('/health', (req, res) => {
     res.status(200).json({message: "Running perfectly"});
@@ -33,6 +38,12 @@ app.use('/api/assignments', assignmentRoutes);
 
 // exam routes
 app.use('/api/exams', examRoutes);
+
+// note routes
+app.use('/api/notes', noteRoutes);
+
+// notification routes
+app.use('/api/notifications', notificationRoutes);
 
 // Catch-all: runs only if no route above matched the request
 app.use((req, res) => {

@@ -15,6 +15,11 @@ ALTER TABLE users
     -- Whole number of streak days; every existing user gets 0; never negative
     ADD COLUMN IF NOT EXISTS streak_days INTEGER NOT NULL DEFAULT 0 CHECK (streak_days >= 0);
 
+-- Add Google's permanent id for a person to the users table (safe to run twice)
+ALTER TABLE users
+    -- Empty for password signups; no two users can share one Google id
+    ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE;
+
 CREATE TABLE IF NOT EXISTS courses(
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -107,4 +112,48 @@ CREATE TABLE IF NOT EXISTS exam_topics(
     topic TEXT NOT NULL,
     -- Ticked or not; starts unticked
     completed BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+-- Create the notes table only if it is not already there
+CREATE TABLE IF NOT EXISTS notes(
+    -- Auto-counting primary key
+    id SERIAL PRIMARY KEY,
+    -- Owner; deleting the user deletes their notes
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    -- The course it belongs to; required; deleting the course deletes its notes
+    course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    -- Every note needs a title
+    title TEXT NOT NULL,
+    -- A Postgres list of text values; never null; empty list by default
+    tags TEXT[] NOT NULL DEFAULT '{}',
+    -- Starred or not; not starred by default
+    favorite BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Optional label like "Lecture Notes"
+    category TEXT,
+    -- The markdown body; empty text by default
+    content TEXT NOT NULL DEFAULT '',
+    -- The exact moment of the last change, stored as a real point in time; filled in with NOW() on insert
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Create the notifications table only if it is not already there
+CREATE TABLE IF NOT EXISTS notifications(
+    -- Auto-counting primary key
+    id SERIAL PRIMARY KEY,
+    -- Owner; deleting the user deletes their notifications
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    -- The kind of alert; only these three words are allowed
+    type TEXT NOT NULL CHECK (type IN ('exam', 'assignment', 'system')),
+    -- Short headline
+    title TEXT NOT NULL,
+    -- The full sentence shown to the student
+    message TEXT NOT NULL,
+    -- Has the student seen it; starts unread
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    -- The exact moment it was created; filled in with NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    -- A label like "exam:5:7d:2026-10-30" that identifies WHICH alert this is
+    dedupe_key TEXT NOT NULL,
+    -- The same user can never get the same alert twice
+    UNIQUE (user_id, dedupe_key)
 );
